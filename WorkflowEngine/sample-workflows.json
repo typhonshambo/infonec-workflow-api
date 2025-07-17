@@ -1,0 +1,147 @@
+{
+  "approvalWorkflow": {
+    "name": "Document Approval",
+    "description": "Simple document approval process",
+    "states": [
+      {
+        "id": "draft",
+        "name": "Draft",
+        "isInitial": true,
+        "isFinal": false,
+        "enabled": true,
+        "description": "Document is being written"
+      },
+      {
+        "id": "review",
+        "name": "Under Review",
+        "isInitial": false,
+        "isFinal": false,
+        "enabled": true,
+        "description": "Document is being reviewed"
+      },
+      {
+        "id": "approved",
+        "name": "Approved",
+        "isInitial": false,
+        "isFinal": true,
+        "enabled": true,
+        "description": "Document has been approved"
+      },
+      {
+        "id": "rejected",
+        "name": "Rejected",
+        "isInitial": false,
+        "isFinal": true,
+        "enabled": true,
+        "description": "Document has been rejected"
+      }
+    ],
+    "actions": [
+      {
+        "id": "submit",
+        "name": "Submit for Review",
+        "enabled": true,
+        "fromStates": ["draft"],
+        "toState": "review",
+        "description": "Submit document for review"
+      },
+      {
+        "id": "approve",
+        "name": "Approve Document",
+        "enabled": true,
+        "fromStates": ["review"],
+        "toState": "approved",
+        "description": "Approve the document"
+      },
+      {
+        "id": "reject",
+        "name": "Reject Document",
+        "enabled": true,
+        "fromStates": ["review"],
+        "toState": "rejected",
+        "description": "Reject the document"
+      }
+    ]
+  },
+  
+  "orderProcessing": {
+    "name": "Order Processing",
+    "description": "E-commerce order processing workflow",
+    "states": [
+      {
+        "id": "pending",
+        "name": "Pending",
+        "isInitial": true,
+        "isFinal": false,
+        "enabled": true,
+        "description": "Order received, pending payment"
+      },
+      {
+        "id": "paid",
+        "name": "Paid",
+        "isInitial": false,
+        "isFinal": false,
+        "enabled": true,
+        "description": "Payment confirmed"
+      },
+      {
+        "id": "shipped",
+        "name": "Shipped",
+        "isInitial": false,
+        "isFinal": false,
+        "enabled": true,
+        "description": "Order has been shipped"
+      },
+      {
+        "id": "delivered",
+        "name": "Delivered",
+        "isInitial": false,
+        "isFinal": true,
+        "enabled": true,
+        "description": "Order delivered successfully"
+      },
+      {
+        "id": "cancelled",
+        "name": "Cancelled",
+        "isInitial": false,
+        "isFinal": true,
+        "enabled": true,
+        "description": "Order was cancelled"
+      }
+    ],
+    "actions": [
+      {
+        "id": "pay",
+        "name": "Process Payment",
+        "enabled": true,
+        "fromStates": ["pending"],
+        "toState": "paid",
+        "description": "Process customer payment"
+      },
+      {
+        "id": "ship",
+        "name": "Ship Order",
+        "enabled": true,
+        "fromStates": ["paid"],
+        "toState": "shipped",
+        "description": "Ship the order to customer"
+      },
+      {
+        "id": "deliver",
+        "name": "Mark as Delivered",
+        "enabled": true,
+        "fromStates": ["shipped"],
+        "toState": "delivered",
+        "description": "Mark order as delivered"
+      },
+      {
+        "id": "cancel",
+        "name": "Cancel Order",
+        "enabled": true,
+        "fromStates": ["pending", "paid"],
+        "toState": "cancelled",
+        "description": "Cancel the order"
+      }
+    ]
+  }
+}
