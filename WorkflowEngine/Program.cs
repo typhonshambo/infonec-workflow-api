@@ -15,7 +15,17 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { 
         Title = "Workflow Engine API", 
         Version = "v1",
-        Description = "A configurable workflow state machine API"
+        Description = @"
+A workflow state machine that actually works (hopefully).
+
+You can:
+- Create workflow definitions 
+- Start instances from those definitions
+- Execute actions to move things around
+- See what's happening
+
+",
+        Contact = new() { Name = "shambo", Email = "shamboc04@gmail.com" }
     });
 });
 
@@ -31,25 +41,25 @@ app.UseSwaggerUI(c =>
 
 // WORKFLOW DEFINITION ENDPOINTS
 
-// List all workflow definitions
+// Get all definitions
 app.MapGet("/api/workflows/definitions", async (WorkflowService workflowService) =>
 {
     var definitions = await workflowService.GetAllDefinitionsAsync();
     return Results.Ok(definitions);
 })
-.WithName("GetAllWorkflowDefinitions")
-.WithSummary("Get all workflow definitions");
+.WithTags("Definitions")
+.WithSummary("List all workflow definitions");
 
-// Get specific workflow definition
+// Get one definition
 app.MapGet("/api/workflows/definitions/{id}", async (string id, WorkflowService workflowService) =>
 {
     var definition = await workflowService.GetDefinitionAsync(id);
     return definition != null ? Results.Ok(definition) : Results.NotFound();
 })
-.WithName("GetWorkflowDefinition")
-.WithSummary("Get a specific workflow definition by ID");
+.WithTags("Definitions")
+.WithSummary("Get workflow definition by ID");
 
-// Create new workflow definition
+// Create new definition
 app.MapPost("/api/workflows/definitions", async (CreateWorkflowDefinitionRequest request, WorkflowService workflowService) =>
 {
     var (success, definition, errors) = await workflowService.CreateDefinitionAsync(request);
@@ -61,14 +71,13 @@ app.MapPost("/api/workflows/definitions", async (CreateWorkflowDefinitionRequest
     
     return Results.BadRequest(new { errors });
 })
-.WithName("CreateWorkflowDefinition")
-.WithSummary("Create a new workflow definition");
+.WithTags("Definitions")
+.WithSummary("Create workflow definition")
+.WithDescription("Remember: exactly one initial state required!");
 
-//WORKFLOW INSTANCE ENDPOINTS
+//WORKFLOW INSTANCES
 
-// WORKFLOW INSTANCE ENDPOINTS
-
-// POST /api/workflows/instances - Start new workflow instance
+// Start new instance
 app.MapPost("/api/workflows/instances", async (StartWorkflowInstanceRequest request, WorkflowService workflowService) =>
 {
     var (success, instance, errors) = await workflowService.StartInstanceAsync(request);
@@ -81,10 +90,10 @@ app.MapPost("/api/workflows/instances", async (StartWorkflowInstanceRequest requ
     
     return Results.BadRequest(new { errors });
 })
-.WithName("StartWorkflowInstance")
-.WithSummary("Start a new workflow instance");
+.WithTags("Instances")
+.WithSummary("Start workflow instance");
 
-// GET /api/workflows/instances - List all workflow instances
+// Get all instances
 app.MapGet("/api/workflows/instances", async (WorkflowService workflowService) =>
 {
     var instances = await workflowService.GetAllInstancesAsync();
@@ -101,19 +110,19 @@ app.MapGet("/api/workflows/instances", async (WorkflowService workflowService) =
     
     return Results.Ok(responses);
 })
-.WithName("GetAllWorkflowInstances")
-.WithSummary("Get all workflow instances");
+.WithTags("Instances")
+.WithSummary("List all instances");
 
-// GET /api/workflows/instances/{id} - Get specific workflow instance  
+// Get one instance
 app.MapGet("/api/workflows/instances/{id}", async (string id, WorkflowService workflowService) =>
 {
     var response = await workflowService.GetInstanceResponseAsync(id);
     return response != null ? Results.Ok(response) : Results.NotFound();
 })
-.WithName("GetWorkflowInstance")
-.WithSummary("Get a specific workflow instance by ID");
+.WithTags("Instances")
+.WithSummary("Get instance by ID");
 
-// POST /api/workflows/instances/{id}/actions - Execute action on instance
+// Execute action - the fun part
 app.MapPost("/api/workflows/instances/{id}/actions", async (string id, ExecuteActionRequest request, WorkflowService workflowService) =>
 {
     var (success, instance, errors) = await workflowService.ExecuteActionAsync(id, request);
@@ -126,7 +135,11 @@ app.MapPost("/api/workflows/instances/{id}/actions", async (string id, ExecuteAc
     
     return Results.BadRequest(new { errors });
 })
-.WithName("ExecuteWorkflowAction")
-.WithSummary("Execute an action on a workflow instance");
+.WithTags("Instances")
+.WithSummary("Execute action on instance")
+.WithDescription("Move your instance to next state - validation applies!");
+
+// TODO: Add health check endpoint
+// TODO: Maybe add some metrics if we get fancy
 
 app.Run();
