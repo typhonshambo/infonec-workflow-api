@@ -1,5 +1,7 @@
 using WorkflowEngine.Services;
 using WorkflowEngine.DTOs;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,12 +10,13 @@ builder.Services.AddSingleton<WorkflowRepository>();
 builder.Services.AddSingleton<WorkflowValidationService>();
 builder.Services.AddSingleton<WorkflowService>();
 
-// Configure Swagger
+// Configure OpenAPI with custom UI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { 
-        Title = "Workflow Engine API", 
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Workflow Engine API",
         Version = "v1",
         Description = @"
 A workflow state machine that actually works (hopefully).
@@ -23,20 +26,33 @@ You can:
 - Start instances from those definitions
 - Execute actions to move things around
 - See what's happening
-
 ",
-        Contact = new() { Name = "shambo", Email = "shamboc04@gmail.com" }
+        Contact = new OpenApiContact 
+        { 
+            Name = "shambo",
+            Email = "shamboc04@gmail.com" 
+        }
     });
 });
 
 var app = builder.Build();
 
-// Configure middleware
-app.UseSwagger();
+// Configure middleware with custom path and UI options
+app.UseSwagger(c => 
+{
+    c.RouteTemplate = "api/{documentName}/openapi.json";
+});
+
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Workflow Engine API v1");
-    c.RoutePrefix = "swagger";
+    c.RoutePrefix = "api";
+    c.SwaggerEndpoint("/api/v1/openapi.json", "Workflow Engine API v1");
+    c.DocumentTitle = "Workflow Engine API";
+    c.DefaultModelExpandDepth(3);
+    c.DefaultModelRendering(Swashbuckle.AspNetCore.SwaggerUI.ModelRendering.Model);
+    c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    c.EnableDeepLinking();
+    c.DisplayRequestDuration();
 });
 
 // WORKFLOW DEFINITION ENDPOINTS
@@ -84,8 +100,12 @@ app.MapPost("/api/workflows/instances", async (StartWorkflowInstanceRequest requ
     
     if (success)
     {
-        var response = await workflowService.GetInstanceResponseAsync(instance!.Id);
-        return Results.Created($"/api/workflows/instances/{instance.Id}", response);
+        var (detailsSuccess, response, detailsErrors) = await workflowService.GetInstanceDetailsAsync(instance!.Id);
+        if (detailsSuccess)
+        {
+            return Results.Created($"/api/workflows/instances/{instance.Id}", response);
+        }
+        return Results.BadRequest(new { errors = detailsErrors });
     }
     
     return Results.BadRequest(new { errors });
@@ -101,10 +121,10 @@ app.MapGet("/api/workflows/instances", async (WorkflowService workflowService) =
     
     foreach (var instance in instances)
     {
-        var response = await workflowService.GetInstanceResponseAsync(instance.Id);
-        if (response != null)
+        var (success, response, errors) = await workflowService.GetInstanceDetailsAsync(instance.Id);
+        if (success)
         {
-            responses.Add(response);
+            responses.Add(response!);
         }
     }
     
@@ -116,8 +136,12 @@ app.MapGet("/api/workflows/instances", async (WorkflowService workflowService) =
 // Get one instance
 app.MapGet("/api/workflows/instances/{id}", async (string id, WorkflowService workflowService) =>
 {
-    var response = await workflowService.GetInstanceResponseAsync(id);
-    return response != null ? Results.Ok(response) : Results.NotFound();
+    var (success, response, errors) = await workflowService.GetInstanceDetailsAsync(id);
+    if (success)
+    {
+        return Results.Ok(response);
+    }
+    return Results.NotFound(new { errors });
 })
 .WithTags("Instances")
 .WithSummary("Get instance by ID");
@@ -129,8 +153,12 @@ app.MapPost("/api/workflows/instances/{id}/actions", async (string id, ExecuteAc
     
     if (success)
     {
-        var response = await workflowService.GetInstanceResponseAsync(instance!.Id);
-        return Results.Ok(response);
+        var (detailsSuccess, response, detailsErrors) = await workflowService.GetInstanceDetailsAsync(instance!.Id);
+        if (detailsSuccess)
+        {
+            return Results.Ok(response);
+        }
+        return Results.BadRequest(new { errors = detailsErrors });
     }
     
     return Results.BadRequest(new { errors });
@@ -138,8 +166,5 @@ app.MapPost("/api/workflows/instances/{id}/actions", async (string id, ExecuteAc
 .WithTags("Instances")
 .WithSummary("Execute action on instance")
 .WithDescription("Move your instance to next state - validation applies!");
-
-// TODO: Add health check endpoint
-// TODO: Maybe add some metrics if we get fancy
 
 app.Run();
