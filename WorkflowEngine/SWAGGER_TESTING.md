@@ -1,4 +1,4 @@
-# Swagger UI Testing Guide
+# API Testing Guide
 
 ## Quick Start
 
@@ -8,7 +8,7 @@
    dotnet run
    ```
 
-2. **Open Swagger UI:** `http://localhost:5000/swagger`
+2. **Open API Documentation:** `http://localhost:5000/api`
 
 ## Step-by-Step Testing
 
