@@ -10,8 +10,10 @@ builder.Services.AddSingleton<WorkflowRepository>();
 builder.Services.AddSingleton<WorkflowValidationService>();
 builder.Services.AddSingleton<WorkflowService>();
 
-// Configure OpenAPI with custom UI
+// Add EndpointsApiExplorer for both Swagger and Scalar
 builder.Services.AddEndpointsApiExplorer();
+
+/* SWAGGER CONFIGURATION - Currently Active */
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo 
@@ -35,9 +37,152 @@ You can:
     });
 });
 
+/* SCALAR CONFIGURATION - Future Use
+// First add package when available: Microsoft.AspNetCore.OpenApi.Scalar
+// Then add using statements: 
+//   using Microsoft.AspNetCore.OpenApi.Scalar;
+//   using Microsoft.AspNetCore.OpenApi.Scalar.Models;
+
+builder.Services.AddScalar(options =>
+{
+    // Basic API Information
+    options.Title = "Workflow Engine API";
+    options.Version = "v1";
+    options.Description = @"
+A workflow state machine that actually works (hopefully).
+
+You can:
+- Create workflow definitions 
+- Start instances from those definitions
+- Execute actions to move things around
+- See what's happening";
+    
+    // Contact Information
+    options.Contact = new()
+    {
+        Name = "shambo",
+        Email = "shamboc04@gmail.com",
+        Url = new Uri("https://github.com/Chimankarparag/infonec-workflow-api")
+    };
+
+    // License Information
+    options.License = new()
+    {
+        Name = "MIT",
+        Url = new Uri("https://opensource.org/licenses/MIT")
+    };
+
+    // Server Configuration
+    options.Servers = new[]
+    {
+        new ScalarServer 
+        { 
+            Url = "http://localhost:5000",
+            Description = "Development Server"
+        },
+        new ScalarServer 
+        { 
+            Url = "https://api.yourproduction.com",
+            Description = "Production Server"
+        }
+    };
+
+    // Security Definitions
+    options.Security = new ScalarSecurityRequirement[]
+    {
+        new()
+        {
+            // Add your security requirements here
+            // Example for Bearer token:
+            // Name = "Bearer",
+            // Scheme = "bearer",
+            // BearerFormat = "JWT"
+        }
+    };
+
+    // Documentation Customization
+    options.Documentation = new ScalarDocumentationOptions
+    {
+        // Dark mode by default
+        DefaultTheme = ScalarTheme.Dark,
+        
+        // Custom navigation grouping
+        TagGroups = new[]
+        {
+            new ScalarTagGroup
+            {
+                Name = "Workflow Management",
+                Tags = new[] { "Definitions", "Instances" }
+            }
+        },
+
+        // Example request/response pairs
+        Examples = true,
+
+        // Show request/response schemas
+        ShowSchemas = true,
+
+        // Expand operations by default
+        DefaultExpanded = true,
+
+        // Show copy button for code snippets
+        EnableCodeCopy = true,
+
+        // Enable try-it-out feature
+        TryItOut = new ScalarTryItOutOptions
+        {
+            Enabled = true,
+            // Show request/response headers
+            ShowHeaders = true
+        }
+    };
+
+    // Response Customization
+    options.Responses = new ScalarResponseOptions
+    {
+        // Global response messages
+        Global = new Dictionary<string, ScalarResponse>
+        {
+            ["401"] = new() 
+            { 
+                Description = "Unauthorized - Authentication required"
+            },
+            ["403"] = new() 
+            { 
+                Description = "Forbidden - Insufficient permissions"
+            },
+            ["500"] = new() 
+            { 
+                Description = "Internal Server Error - Something went wrong"
+            }
+        }
+    };
+
+    // Request Validation
+    options.Validation = new ScalarValidationOptions
+    {
+        // Enable request validation
+        EnableRequestValidation = true,
+        
+        // Show validation errors in the UI
+        ShowValidationErrors = true
+    };
+
+    // Performance Options
+    options.Performance = new ScalarPerformanceOptions
+    {
+        // Cache documentation
+        EnableCache = true,
+        
+        // Lazy load schemas
+        LazySchemas = true
+    };
+});
+*/
+
 var app = builder.Build();
 
-// Configure middleware with custom path and UI options
+/* SWAGGER MIDDLEWARE - Currently Active */
 app.UseSwagger(c => 
 {
     c.RouteTemplate = "api/{documentName}/openapi.json";
@@ -54,6 +199,139 @@ app.UseSwaggerUI(c =>
     c.EnableDeepLinking();
     c.DisplayRequestDuration();
 });
+
+/* SCALAR MIDDLEWARE - Future Use
+app.UseScalar(options =>
+{
+    // Base path for the Scalar UI
+    options.Path = "/api";
+
+    // Route template for OpenAPI JSON
+    options.RouteTemplate = "api/{documentName}/openapi.json";
+
+    // Customization Options
+    options.UI = new ScalarUIOptions
+    {
+        // Page title in browser
+        PageTitle = "Workflow Engine API Documentation",
+
+        // Favicon URL
+        Favicon = "/favicon.ico",
+
+        // Custom CSS URL
+        CustomCss = "/css/scalar-custom.css",
+
+        // Custom JavaScript URL
+        CustomJs = "/js/scalar-custom.js",
+
+        // Primary color for UI elements
+        PrimaryColor = "#0066cc",
+
+        // Custom HTML head content
+        HeadContent = @"
+            <meta name='description' content='Workflow Engine API Documentation'>
+            <meta name='keywords' content='workflow,api,documentation'>
+        ",
+
+        // Configure search
+        Search = new ScalarSearchOptions
+        {
+            // Enable search functionality
+            Enabled = true,
+            // Minimum search term length
+            MinLength = 3,
+            // Search in descriptions
+            IncludeDescription = true
+        },
+
+        // Layout options
+        Layout = new ScalarLayoutOptions
+        {
+            // Show/hide elements
+            ShowApiTitle = true,
+            ShowApiVersion = true,
+            ShowModels = true,
+            ShowExamples = true,
+            
+            // Navigation options
+            Navigation = new ScalarNavigationOptions
+            {
+                // Sticky sidebar
+                Sticky = true,
+                // Expand by default
+                DefaultExpanded = true
+            }
+        },
+
+        // Configure request options
+        Request = new ScalarRequestOptions
+        {
+            // Enable/disable features
+            WithCredentials = true,
+            EnableTrying = true,
+            EnableDeepLinking = true,
+            
+            // Default timeout
+            Timeout = 30000,
+            
+            // Request samples
+            ShowCurl = true,
+            ShowPowershell = true
+        },
+
+        // Response handling
+        Response = new ScalarResponseOptions
+        {
+            // Show raw response
+            ShowRaw = true,
+            // Show response headers
+            ShowHeaders = true,
+            // Pretty print JSON
+            PrettyPrint = true
+        },
+
+        // Error handling
+        Errors = new ScalarErrorOptions
+        {
+            // Show detailed errors
+            ShowDetails = true,
+            // Show stack traces in development
+            ShowStack = builder.Environment.IsDevelopment()
+        }
+    });
+
+    // Authorization configuration
+    options.Authorization = new ScalarAuthorizationOptions
+    {
+        // Enable authorization features
+        Enabled = true,
+        
+        // Default auth settings
+        DefaultScheme = "Bearer",
+        
+        // Persist auth tokens
+        PersistAuthorization = true,
+        
+        // Auth UI options
+        UI = new ScalarAuthUIOptions
+        {
+            ShowLogout = true,
+            ButtonText = "Authenticate"
+        }
+    };
+});
+
+// Optional: Add security headers for Scalar
+app.Use(async (context, next) =>
+{
+    // Security headers
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    
+    await next();
+});
+*/
 
 // WORKFLOW DEFINITION ENDPOINTS
 
